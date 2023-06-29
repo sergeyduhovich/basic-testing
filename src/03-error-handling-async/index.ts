@@ -4,7 +4,7 @@ export const resolveValue = async (value: unknown) => {
 
 export const throwError = (msg?: string) => {
   throw new Error(msg ?? 'Oops!');
-};
+};;;
 
 export const throwCustomError = () => {
   throw new MyAwesomeError();
