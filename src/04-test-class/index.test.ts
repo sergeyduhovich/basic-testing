@@ -1,3 +1,12 @@
+import { random } from 'lodash';
+
+jest.mock('lodash', () => {
+  return {
+    ...jest.requireActual('lodash'),
+    random: jest.fn(),
+  };
+});
+
 import {
   getBankAccount,
   InsufficientFundsError,
@@ -55,27 +64,42 @@ describe('BankAccount', () => {
     expect(sut.getBalance()).toEqual(800);
   });
 
-  test('fetchBalance should return number in case if request did not failed', async () => {
-    // TODO: random should be mocked to not fail
-    const sut = getBankAccount(0);
-    const result = await sut.fetchBalance();
+  describe('fetchBalance', () => {
+    let mockRandom: jest.Mock;
 
-    expect(typeof result).toBe('number');
+    beforeAll(() => {
+      mockRandom = random as jest.Mock;
+    });
+
+    afterAll(() => {
+      jest.unmock('lodash');
+    });
+
+    test('fetchBalance should return number in case if request did not failed', async () => {
+      const sut = getBankAccount(0);
+
+      mockRandom.mockReturnValueOnce(1);
+      const result = await sut.fetchBalance();
+
+      expect(typeof result).toBe('number');
+    });
   });
 
   test('should set new balance if fetchBalance returned number', async () => {
-    // TODO: random should be mocked to not fail
     const sut = getBankAccount(0);
+
+    jest.spyOn(sut, 'fetchBalance').mockResolvedValueOnce(123);
     await sut.synchronizeBalance();
 
-    expect(sut.getBalance()).not.toEqual(0);
+    expect(sut.getBalance()).toEqual(123);
   });
 
   test('should throw SynchronizationFailedError if fetchBalance returned null', async () => {
-    // TODO: random should be mocked to fail
     const sut = getBankAccount(0);
-    const sutAction = async () => sut.synchronizeBalance();
 
-    await expect(sutAction).toThrow(SynchronizationFailedError);
+    jest.spyOn(sut, 'fetchBalance').mockResolvedValueOnce(null);
+    await expect(sut.synchronizeBalance()).rejects.toThrow(
+      SynchronizationFailedError,
+    );
   });
 });
